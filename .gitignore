@@ -1,0 +1,11 @@
+node_modules
+dist
+dist-mobile
+.env
+.env.local
+*.log
+.DS_Store
+
+# Capacitor / plataformas nativas generadas
+android
+ios
