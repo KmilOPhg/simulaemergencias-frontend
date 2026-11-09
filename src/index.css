@@ -1,10 +1,26 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand: #1b4f8a;
+  --color-brand-dark: #0f2c4c;
+  --color-brand-soft: #e8f1fc;
+  --color-page: #f4f6fa;
+  --color-verified: #15803d;
+  --color-verified-soft: #dcfce7;
+  --color-pending: #c2410c;
+  --color-pending-soft: #ffedd5;
+}
+
 body {
-  @apply bg-[#f4f5f7] text-slate-900;
+  @apply bg-page text-slate-900;
   margin: 0;
   overflow-x: hidden;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
 }
 
 .sidebar-scroll::-webkit-scrollbar {
@@ -12,5 +28,15 @@ body {
 }
 
 .sidebar-scroll::-webkit-scrollbar-thumb {
-  @apply bg-slate-700 rounded;
+  @apply bg-slate-300 rounded;
+}
+
+.barra-pendiente {
+  background-image: repeating-linear-gradient(
+    45deg,
+    #ea580c,
+    #ea580c 4px,
+    #fdba74 4px,
+    #fdba74 8px
+  );
 }
