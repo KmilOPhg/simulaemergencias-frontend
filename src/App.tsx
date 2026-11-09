@@ -22,14 +22,17 @@ const RecursosPage = lazy(() => import("./pages/recursos/RecursosPage").then((m)
 const HistorialEjerciciosPage = lazy(() =>
   import("./pages/ejercicios/HistorialEjerciciosPage").then((m) => ({ default: m.HistorialEjerciciosPage }))
 );
+const NuevoEjercicioPage = lazy(() =>
+  import("./pages/ejercicios/NuevoEjercicioPage").then((m) => ({ default: m.NuevoEjercicioPage }))
+);
 const DetalleEjercicioPage = lazy(() =>
   import("./pages/ejercicios/DetalleEjercicioPage").then((m) => ({ default: m.DetalleEjercicioPage }))
 );
 const ResultadosPage = lazy(() =>
   import("./pages/resultados/ResultadosPage").then((m) => ({ default: m.ResultadosPage }))
 );
-const EstudiantesPendientePage = lazy(() =>
-  import("./pages/estudiantes/EstudiantesPendientePage").then((m) => ({ default: m.EstudiantesPendientePage }))
+const EstudiantesPage = lazy(() =>
+  import("./pages/estudiantes/EstudiantesPage").then((m) => ({ default: m.EstudiantesPage }))
 );
 
 const PageLoader: React.FC = () => (
@@ -57,9 +60,10 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   </div>
 );
 
-const rutaProtegida = (page: React.ReactElement, permiso?: string) => (
+const rutaProtegida = (page: React.ReactElement, permiso?: string, permisosAny?: string[]) => (
   <ProtectedRoute
     permiso={permiso}
+    permisosAny={permisosAny}
     element={<AppLayout>{page}</AppLayout>}
   />
 );
@@ -87,10 +91,29 @@ const App: React.FC = () => {
 
           <Route path="/" element={<ProtectedRoute element={<Navigate to="/home" />} />} />
           <Route path="/home" element={rutaProtegida(<Home />)} />
-          <Route path="/estudiantes" element={rutaProtegida(<EstudiantesPendientePage />)} />
-          <Route path="/ejercicios" element={rutaProtegida(<HistorialEjerciciosPage />)} />
-          <Route path="/ejercicios/:id" element={rutaProtegida(<DetalleEjercicioPage />)} />
-          <Route path="/resultados" element={rutaProtegida(<ResultadosPage />)} />
+          <Route
+            path="/estudiantes"
+            element={rutaProtegida(<EstudiantesPage />, PERMISOS.ESTUDIANTES_CONSULTAR)}
+          />
+          <Route
+            path="/ejercicios"
+            element={rutaProtegida(<HistorialEjerciciosPage />, PERMISOS.EJERCICIOS_CONSULTAR)}
+          />
+          <Route
+            path="/ejercicios/nuevo"
+            element={rutaProtegida(<NuevoEjercicioPage />, PERMISOS.EJERCICIOS_CREAR)}
+          />
+          <Route
+            path="/ejercicios/:id"
+            element={rutaProtegida(<DetalleEjercicioPage />, PERMISOS.EJERCICIOS_CONSULTAR)}
+          />
+          <Route
+            path="/resultados"
+            element={rutaProtegida(<ResultadosPage />, undefined, [
+              PERMISOS.EJERCICIOS_CONSULTAR,
+              PERMISOS.VERIFICACIONES_REGISTRAR,
+            ])}
+          />
           <Route
             path="/recursos"
             element={rutaProtegida(<RecursosPage />, PERMISOS.RECURSOS_CONSULTAR)}

@@ -1,33 +1,28 @@
 import type { TipoEscenario } from "../constants/escenarios.constants";
+import type { ListaPaginada } from "./paginacion.types";
 
-export type EstadoVerificacion = "verificado" | "pendiente_revision";
-
-export type ResultadoGrupoEjemplo = {
-  grupoId: string;
+export type Ejercicio = {
+  id: number;
   nombre: string;
-  totalEstudiantes: number;
-  verificados: number;
-  pendientesRevision: number;
-};
-
-export type EjercicioEjemplo = {
-  id: string;
-  nombre: string;
-  tipoEscenario: TipoEscenario;
   fecha: string;
-  responsable: string;
-  resultados: ResultadoGrupoEjemplo[];
+  horaInicio: string | null;
+  tipoEscenario: TipoEscenario;
+  lugar: string | null;
+  descripcion: string | null;
+  creadoEn: string;
+  registradoPor: {
+    id: number;
+    nombre: string;
+  };
 };
 
-export type ResumenEjercicio = {
-  id: string;
+export type EjercicioCreate = {
   nombre: string;
-  tipoEscenario: TipoEscenario;
   fecha: string;
-  responsable: string;
-  grupos: ResultadoGrupoEjemplo[];
-  totalEstudiantes: number;
-  verificados: number;
-  pendientesRevision: number;
-  porcentajeVerificado: number;
+  tipoEscenario: TipoEscenario;
+  horaInicio?: string;
+  lugar?: string;
+  descripcion?: string;
 };
+
+export type EjerciciosPaginados = ListaPaginada<Ejercicio>;

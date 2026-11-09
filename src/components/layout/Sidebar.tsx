@@ -32,8 +32,8 @@ export const Sidebar: React.FC = () => (
         <div className="flex items-start gap-2">
           <BarChart3 size={16} className="text-brand mt-0.5 shrink-0" aria-hidden />
           <div>
-            <p className="text-[12px] font-semibold text-brand-dark">Vista de consulta</p>
-            <p className="text-[11px] text-slate-500 leading-snug">Seguimiento institucional</p>
+            <p className="text-[12px] font-semibold text-brand-dark">Operación del ejercicio</p>
+            <p className="text-[11px] text-slate-500 leading-snug">Consulta, registro y verificación</p>
           </div>
         </div>
       </div>

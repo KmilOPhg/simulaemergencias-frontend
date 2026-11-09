@@ -1,5 +1,6 @@
 import React from "react";
-import { BarChart3, Home, Shield, Users } from "lucide-react";
+import { ClipboardCheck, Home, Shield, Users } from "lucide-react";
+import { PERMISOS } from "../constants/permisos.constants";
 
 export interface MenuItem {
   id: string;
@@ -30,19 +31,22 @@ export const menuConfig: MenuCategory[] = [
         id: "estudiantes",
         label: "Estudiantes",
         path: "/estudiantes",
+        permiso: PERMISOS.ESTUDIANTES_CONSULTAR,
         icon: <Users size={18} aria-hidden />,
       },
       {
         id: "ejercicios",
         label: "Ejercicios",
         path: "/ejercicios",
+        permiso: PERMISOS.EJERCICIOS_CONSULTAR,
         icon: <Shield size={18} aria-hidden />,
       },
       {
         id: "resultados",
-        label: "Resultados",
+        label: "Verificación",
         path: "/resultados",
-        icon: <BarChart3 size={18} aria-hidden />,
+        permisosAny: [PERMISOS.EJERCICIOS_CONSULTAR, PERMISOS.VERIFICACIONES_REGISTRAR],
+        icon: <ClipboardCheck size={18} aria-hidden />,
       },
     ],
   },
