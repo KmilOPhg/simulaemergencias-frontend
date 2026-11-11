@@ -1,31 +1,67 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Boxes } from "lucide-react";
+import { ClipboardCheck, Shield, Users } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
+import { ConsultaShell } from "../components/consulta/ConsultaShell";
+import { PageHeader } from "../components/consulta/PageHeader";
 import { PERMISOS } from "../constants/permisos.constants";
 
 export const Home: React.FC = () => {
   const { user, tienePermiso } = useAuth();
 
   return (
-    <div className="p-4 lg:p-8 max-w-5xl mx-auto">
-      <h1 className="text-xl font-bold text-gray-900 mb-1">Hola, {user?.nombre} 👋</h1>
-      <p className="text-sm text-gray-500 mb-8">Este es el módulo de ejemplo generado por create-app-fullstack.</p>
+    <ConsultaShell>
+      <PageHeader
+        title={`Hola, ${user?.nombre ?? "usuario"}`}
+        description="Consulta estudiantes, registra ejercicios y verifica participantes por grupo. Esta aplicación apoya la gestión de información y no sustituye los protocolos institucionales."
+      />
 
-      {tienePermiso(PERMISOS.RECURSOS_CONSULTAR) && (
-        <Link
-          to="/recursos"
-          className="flex items-center gap-4 bg-white border border-gray-200 rounded-xl p-5 max-w-sm shadow-sm hover:shadow-md hover:border-blue-300 transition"
-        >
-          <div className="w-11 h-11 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
-            <Boxes size={22} />
-          </div>
-          <div>
-            <p className="font-semibold text-gray-900 text-[14px]">Recursos</p>
-            <p className="text-[12px] text-gray-500">Módulo de ejemplo (CRUD)</p>
-          </div>
-        </Link>
-      )}
-    </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {tienePermiso(PERMISOS.ESTUDIANTES_CONSULTAR) && (
+          <Link
+            to="/estudiantes"
+            className="flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:border-brand hover:shadow-md transition"
+          >
+            <div className="w-11 h-11 rounded-xl bg-brand-soft text-brand flex items-center justify-center shrink-0">
+              <Users size={22} aria-hidden />
+            </div>
+            <div>
+              <p className="font-semibold text-brand-dark">Estudiantes</p>
+              <p className="text-sm text-slate-500 mt-1">Consulta el listado y busca por código único.</p>
+            </div>
+          </Link>
+        )}
+
+        {tienePermiso(PERMISOS.EJERCICIOS_CONSULTAR) && (
+          <Link
+            to="/ejercicios"
+            className="flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:border-brand hover:shadow-md transition"
+          >
+            <div className="w-11 h-11 rounded-xl bg-brand-soft text-brand flex items-center justify-center shrink-0">
+              <Shield size={22} aria-hidden />
+            </div>
+            <div>
+              <p className="font-semibold text-brand-dark">Ejercicios</p>
+              <p className="text-sm text-slate-500 mt-1">Consulta los ejercicios registrados o crea uno nuevo.</p>
+            </div>
+          </Link>
+        )}
+
+        {(tienePermiso(PERMISOS.VERIFICACIONES_REGISTRAR) || tienePermiso(PERMISOS.EJERCICIOS_CONSULTAR)) && (
+          <Link
+            to="/resultados"
+            className="flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:border-brand hover:shadow-md transition"
+          >
+            <div className="w-11 h-11 rounded-xl bg-brand-soft text-brand flex items-center justify-center shrink-0">
+              <ClipboardCheck size={22} aria-hidden />
+            </div>
+            <div>
+              <p className="font-semibold text-brand-dark">Verificación</p>
+              <p className="text-sm text-slate-500 mt-1">Selecciona un grupo y registra la verificación por código.</p>
+            </div>
+          </Link>
+        )}
+      </div>
+    </ConsultaShell>
   );
 };

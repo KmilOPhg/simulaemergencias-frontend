@@ -14,4 +14,10 @@ export const PERMISOS = {
   ROLES_CREAR: "roles.crear",
   ROLES_ACTUALIZAR: "roles.actualizar",
   ROLES_INHABILITAR: "roles.inhabilitar",
+
+  ESTUDIANTES_CONSULTAR: "estudiantes.consultar",
+  GRUPOS_CONSULTAR: "grupos.consultar",
+  EJERCICIOS_CONSULTAR: "ejercicios.consultar",
+  EJERCICIOS_CREAR: "ejercicios.crear",
+  VERIFICACIONES_REGISTRAR: "verificaciones.registrar",
 } as const;

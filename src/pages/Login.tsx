@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { AuthService } from "../services/auth.service";
 import { guardarSesion } from "../utils/sesion.storage";
 import { extractErrorMessage } from "../utils/extractErrorMessage";
+import { MarcaLockup } from "../components/layout/MarcaLockup";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -45,11 +46,8 @@ export const Login: React.FC = () => {
       <div className="relative z-10 w-full max-w-md">
         <div className="bg-white rounded-xl shadow-xl p-8">
           <div className="flex flex-col items-center mb-8">
-            <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white text-2xl font-bold mb-3">
-              {"simulaemergencias".slice(0, 1).toUpperCase()}
-            </div>
-            <h1 className="text-lg font-bold text-gray-900">{"simulaemergencias"}</h1>
-            <p className="text-gray-500 text-[13px] mt-1">Inicia sesión para continuar</p>
+            <MarcaLockup align="center" />
+            <p className="text-slate-500 text-[13px] mt-3">Inicia sesión para continuar</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
@@ -86,7 +84,7 @@ export const Login: React.FC = () => {
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                  tabIndex={-1}
+                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
