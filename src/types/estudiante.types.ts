@@ -10,3 +10,7 @@ export type Estudiante = {
 };
 
 export type EstudiantesPaginados = ListaPaginada<Estudiante>;
+
+export type EstudiantesDeGrupo = EstudiantesPaginados & {
+  grupo: Grupo;
+};

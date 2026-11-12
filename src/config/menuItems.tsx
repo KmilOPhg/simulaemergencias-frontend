@@ -45,7 +45,11 @@ export const menuConfig: MenuCategory[] = [
         id: "resultados",
         label: "Verificación",
         path: "/resultados",
-        permisosAny: [PERMISOS.EJERCICIOS_CONSULTAR, PERMISOS.VERIFICACIONES_REGISTRAR],
+        permisosAny: [
+          PERMISOS.EJERCICIOS_CONSULTAR,
+          PERMISOS.VERIFICACIONES_REGISTRAR,
+          PERMISOS.VERIFICACIONES_CONSULTAR,
+        ],
         icon: <ClipboardCheck size={18} aria-hidden />,
       },
     ],

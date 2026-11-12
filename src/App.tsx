@@ -112,6 +112,7 @@ const App: React.FC = () => {
             element={rutaProtegida(<ResultadosPage />, undefined, [
               PERMISOS.EJERCICIOS_CONSULTAR,
               PERMISOS.VERIFICACIONES_REGISTRAR,
+              PERMISOS.VERIFICACIONES_CONSULTAR,
             ])}
           />
           <Route

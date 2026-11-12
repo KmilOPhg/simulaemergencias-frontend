@@ -10,12 +10,14 @@ import { PaginacionSimple } from "../../components/PaginacionSimple";
 import { EjerciciosService } from "../../services/ejercicios.service";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import { formatearFechaCorta } from "../../utils/formato";
-import { etiquetaEscenario } from "../../constants/escenarios.constants";
+import { TIPOS_ESCENARIO, etiquetaEscenario, type TipoEscenario } from "../../constants/escenarios.constants";
 import { useAuth } from "../../hooks/useAuth";
 import { PERMISOS } from "../../constants/permisos.constants";
 import type { Ejercicio } from "../../types/ejercicio.types";
 
 const LIMITE = 20;
+const selectClass =
+  "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-brand";
 
 export const HistorialEjerciciosPage: React.FC = () => {
   const { tienePermiso } = useAuth();
@@ -27,12 +29,17 @@ export const HistorialEjerciciosPage: React.FC = () => {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [tipoEscenario, setTipoEscenario] = useState<TipoEscenario | "">("");
+  const [fecha, setFecha] = useState("");
 
-  const cargar = useCallback(async (paginaCargar: number) => {
+  const cargar = useCallback(async (paginaCargar: number, tipo: TipoEscenario | "" = tipoEscenario, dia = fecha) => {
     setLoading(true);
     setError("");
     try {
-      const resultado = await EjerciciosService.listar(paginaCargar, LIMITE);
+      const resultado = await EjerciciosService.listar(paginaCargar, LIMITE, {
+        tipoEscenario: tipo,
+        fecha: dia,
+      });
       setEjercicios(resultado.datos);
       setPagina(resultado.pagina);
       setTotalPaginas(resultado.totalPaginas);
@@ -42,7 +49,7 @@ export const HistorialEjerciciosPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [tipoEscenario, fecha]);
 
   useEffect(() => {
     void cargar(1);
@@ -66,6 +73,41 @@ export const HistorialEjerciciosPage: React.FC = () => {
         }
       />
 
+      <section className="rounded-2xl border border-slate-200 bg-white px-4 py-4 sm:px-5 mb-4 shadow-sm">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="filtro-escenario" className="block text-[12px] text-slate-500">
+              Tipo de escenario
+            </label>
+            <select
+              id="filtro-escenario"
+              className={selectClass}
+              value={tipoEscenario}
+              onChange={(e) => setTipoEscenario(e.target.value as TipoEscenario | "")}
+            >
+              <option value="">Todos</option>
+              {TIPOS_ESCENARIO.map((tipo) => (
+                <option key={tipo} value={tipo}>
+                  {etiquetaEscenario(tipo)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="filtro-fecha" className="block text-[12px] text-slate-500">
+              Fecha
+            </label>
+            <input
+              id="filtro-fecha"
+              type="date"
+              className={selectClass}
+              value={fecha}
+              onChange={(e) => setFecha(e.target.value)}
+            />
+          </div>
+        </div>
+      </section>
+
       <section className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-slate-100">
           <div className="flex items-center gap-2">
@@ -84,8 +126,12 @@ export const HistorialEjerciciosPage: React.FC = () => {
         ) : ejercicios.length === 0 ? (
           <EstadoVacio
             icon={<History size={24} aria-hidden />}
-            title="No hay ejercicios anteriores"
-            description="Los ejercicios aparecerán aquí cuando se registren. Podrás consultar su información y registrar verificaciones."
+            title={tipoEscenario || fecha ? "Sin resultados" : "No hay ejercicios anteriores"}
+            description={
+              tipoEscenario || fecha
+                ? "No encontramos coincidencias. Prueba con otras palabras o cambia los filtros."
+                : "Los ejercicios aparecerán aquí cuando se registren. Podrás consultar su información y registrar verificaciones."
+            }
             action={
               puedeCrear ? (
                 <Link
@@ -178,7 +224,7 @@ export const HistorialEjerciciosPage: React.FC = () => {
               pagina={pagina}
               totalPaginas={totalPaginas}
               total={total}
-              onCambiarPagina={(siguiente) => void cargar(siguiente)}
+              onCambiarPagina={(siguiente) => void cargar(siguiente, tipoEscenario, fecha)}
             />
           </>
         )}

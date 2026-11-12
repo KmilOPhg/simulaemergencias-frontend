@@ -19,5 +19,7 @@ export const PERMISOS = {
   GRUPOS_CONSULTAR: "grupos.consultar",
   EJERCICIOS_CONSULTAR: "ejercicios.consultar",
   EJERCICIOS_CREAR: "ejercicios.crear",
+  EJERCICIOS_SELECCIONAR_GRUPO: "ejercicios.seleccionarGrupo",
   VERIFICACIONES_REGISTRAR: "verificaciones.registrar",
+  VERIFICACIONES_CONSULTAR: "verificaciones.consultar",
 } as const;

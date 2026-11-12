@@ -13,6 +13,7 @@ import { EstudiantesService } from "../../services/estudiantes.service";
 import { GruposService } from "../../services/grupos.service";
 import { VerificacionesService } from "../../services/verificaciones.service";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
+import { validarCodigoUnico } from "../../utils/codigo.utils";
 import { nombreEstudiante } from "../../utils/estudiante.utils";
 import { etiquetaEscenario } from "../../constants/escenarios.constants";
 import { formatearFechaCorta } from "../../utils/formato";
@@ -20,7 +21,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { PERMISOS } from "../../constants/permisos.constants";
 import type { Ejercicio } from "../../types/ejercicio.types";
 import type { Estudiante } from "../../types/estudiante.types";
-import type { Grupo } from "../../types/grupo.types";
+import type { Grupo, GrupoSeleccionado } from "../../types/grupo.types";
 
 const selectClass =
   "mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-brand";
@@ -28,11 +29,14 @@ const selectClass =
 export const ResultadosPage: React.FC = () => {
   const { tienePermiso } = useAuth();
   const puedeRegistrar = tienePermiso(PERMISOS.VERIFICACIONES_REGISTRAR);
+  const puedeSeleccionarGrupo = tienePermiso(PERMISOS.EJERCICIOS_SELECCIONAR_GRUPO);
+  const puedeConsultarVerificaciones = tienePermiso(PERMISOS.VERIFICACIONES_CONSULTAR);
   const [searchParams, setSearchParams] = useSearchParams();
   const ejercicioInicial = searchParams.get("ejercicioId") ?? "";
 
   const [ejercicios, setEjercicios] = useState<Ejercicio[]>([]);
   const [grupos, setGrupos] = useState<Grupo[]>([]);
+  const [gruposSeleccionados, setGruposSeleccionados] = useState<GrupoSeleccionado[]>([]);
   const [ejercicioId, setEjercicioId] = useState(ejercicioInicial);
   const [grupoId, setGrupoId] = useState("");
   const [estudiantes, setEstudiantes] = useState<Estudiante[]>([]);
@@ -51,6 +55,28 @@ export const ResultadosPage: React.FC = () => {
     [ejercicios, ejercicioId]
   );
 
+  const gruposDisponibles = puedeSeleccionarGrupo
+    ? grupos
+    : grupos.filter((grupo) => gruposSeleccionados.some((item) => item.grupo.id === grupo.id));
+
+  const cargarVerificaciones = useCallback(
+    async (idEjercicio: number) => {
+      if (!puedeConsultarVerificaciones) {
+        setVerificados(new Set());
+        return;
+      }
+      const lista = await VerificacionesService.listarTodas(idEjercicio);
+      setVerificados(new Set(lista.map((item) => item.estudiante.id)));
+    },
+    [puedeConsultarVerificaciones]
+  );
+
+  const cargarGruposDelEjercicio = useCallback(async (idEjercicio: number) => {
+    const resultado = await EjerciciosService.listarGrupos(idEjercicio);
+    setGruposSeleccionados(resultado.grupos);
+    return resultado.grupos;
+  }, []);
+
   useEffect(() => {
     const iniciar = async () => {
       setLoading(true);
@@ -62,8 +88,16 @@ export const ResultadosPage: React.FC = () => {
         ]);
         setEjercicios(listaEjercicios.datos);
         setGrupos(listaGrupos);
-        if (!ejercicioInicial && listaEjercicios.datos[0]) {
-          setEjercicioId(String(listaEjercicios.datos[0].id));
+        const idInicial = ejercicioInicial || (listaEjercicios.datos[0] ? String(listaEjercicios.datos[0].id) : "");
+        if (!ejercicioInicial && idInicial) {
+          setEjercicioId(idInicial);
+        }
+        if (idInicial) {
+          const seleccionados = await cargarGruposDelEjercicio(Number(idInicial));
+          await cargarVerificaciones(Number(idInicial));
+          if (seleccionados[0] && !grupoId) {
+            setGrupoId(String(seleccionados[0].grupo.id));
+          }
         }
       } catch (err) {
         setError(extractErrorMessage(err, "No se pudo cargar la información del ejercicio."));
@@ -72,7 +106,9 @@ export const ResultadosPage: React.FC = () => {
       }
     };
     void iniciar();
-  }, [ejercicioInicial]);
+    // grupoId se lee solo para no pisar una selección ya hecha en el primer render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ejercicioInicial, cargarGruposDelEjercicio, cargarVerificaciones]);
 
   const cargarEstudiantes = useCallback(async (grupoSeleccionado: string) => {
     if (!grupoSeleccionado) {
@@ -81,7 +117,7 @@ export const ResultadosPage: React.FC = () => {
     }
     setCargandoGrupo(true);
     try {
-      const resultado = await EstudiantesService.listar(1, 100, Number(grupoSeleccionado));
+      const resultado = await EstudiantesService.listarPorGrupo(Number(grupoSeleccionado), 1, 100);
       setEstudiantes(resultado.datos);
     } catch (err) {
       toast.error(extractErrorMessage(err, "No se pudieron cargar los estudiantes del grupo."));
@@ -91,13 +127,52 @@ export const ResultadosPage: React.FC = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (grupoId) void cargarEstudiantes(grupoId);
+  }, [grupoId, cargarEstudiantes]);
+
+  const asociarGrupo = async (idEjercicio: number, idGrupo: number) => {
+    const yaEsta = gruposSeleccionados.some((item) => item.grupo.id === idGrupo);
+    if (yaEsta) return;
+    if (!puedeSeleccionarGrupo) {
+      toast.error("Este grupo no está seleccionado para el ejercicio.");
+      return;
+    }
+    try {
+      await EjerciciosService.seleccionarGrupo(idEjercicio, idGrupo);
+      await cargarGruposDelEjercicio(idEjercicio);
+      toast.success("Grupo seleccionado para el ejercicio");
+    } catch (err) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 409) {
+        await cargarGruposDelEjercicio(idEjercicio);
+        return;
+      }
+      throw err;
+    }
+  };
+
   const cambiarEjercicio = (valor: string) => {
     setEjercicioId(valor);
-    setVerificados(new Set());
     setEncontrado(null);
     setCodigo("");
+    setGrupoId("");
+    setEstudiantes([]);
+    setGruposSeleccionados([]);
+    setVerificados(new Set());
     if (valor) setSearchParams({ ejercicioId: valor });
     else setSearchParams({});
+    if (valor) {
+      void (async () => {
+        try {
+          const seleccionados = await cargarGruposDelEjercicio(Number(valor));
+          await cargarVerificaciones(Number(valor));
+          if (seleccionados[0]) setGrupoId(String(seleccionados[0].grupo.id));
+        } catch (err) {
+          toast.error(extractErrorMessage(err, "No se pudo cargar el ejercicio."));
+        }
+      })();
+    }
   };
 
   const cambiarGrupo = (valor: string) => {
@@ -105,19 +180,19 @@ export const ResultadosPage: React.FC = () => {
     setEncontrado(null);
     setCodigo("");
     setCodigoError("");
-    void cargarEstudiantes(valor);
-  };
-
-  const validarCodigo = (valor: string): string => {
-    const limpio = valor.trim();
-    if (!limpio) return "Completa este campo";
-    if (!/^[A-Za-z0-9-]+$/.test(limpio)) return "Revisa el código";
-    return "";
+    if (!valor || !ejercicioId) return;
+    void (async () => {
+      try {
+        await asociarGrupo(Number(ejercicioId), Number(valor));
+      } catch (err) {
+        toast.error(extractErrorMessage(err, "No se pudo seleccionar el grupo."));
+      }
+    })();
   };
 
   const buscar = async (event: React.FormEvent) => {
     event.preventDefault();
-    const errorCampo = validarCodigo(codigo);
+    const errorCampo = validarCodigoUnico(codigo);
     setCodigoError(errorCampo);
     if (errorCampo) return;
     if (!grupoId) {
@@ -127,7 +202,7 @@ export const ResultadosPage: React.FC = () => {
 
     setBuscando(true);
     try {
-      const estudiante = await EstudiantesService.buscarPorCodigo(codigo.trim());
+      const estudiante = await EstudiantesService.buscarPorCodigo(codigo);
       if (estudiante.grupo.id !== Number(grupoId)) {
         setEncontrado(null);
         toast.error("El estudiante no pertenece al grupo indicado.");
@@ -158,6 +233,7 @@ export const ResultadosPage: React.FC = () => {
 
     setRegistrandoId(estudiante.id);
     try {
+      await asociarGrupo(Number(ejercicioId), Number(grupoId));
       await VerificacionesService.registrar(Number(ejercicioId), {
         estudianteId: estudiante.id,
         grupoId: Number(grupoId),
@@ -240,7 +316,7 @@ export const ResultadosPage: React.FC = () => {
                   onChange={(e) => cambiarGrupo(e.target.value)}
                 >
                   <option value="">Selecciona un grupo</option>
-                  {grupos.map((grupo) => (
+                  {gruposDisponibles.map((grupo) => (
                     <option key={grupo.id} value={grupo.id}>
                       {grupo.codigo} · {grupo.nombre}
                     </option>
@@ -251,6 +327,8 @@ export const ResultadosPage: React.FC = () => {
             {ejercicio && (
               <p className="mt-3 text-[12px] text-slate-400">
                 {ejercicio.nombre} · {etiquetaEscenario(ejercicio.tipoEscenario)} · {formatearFechaCorta(ejercicio.fecha)}
+                {gruposSeleccionados.length > 0 &&
+                  ` · Grupos: ${gruposSeleccionados.map((item) => item.grupo.codigo).join(", ")}`}
               </p>
             )}
           </section>
@@ -266,9 +344,9 @@ export const ResultadosPage: React.FC = () => {
                   value={codigo}
                   onChange={(e) => {
                     setCodigo(e.target.value);
-                    if (codigoError) setCodigoError(validarCodigo(e.target.value));
+                    if (codigoError) setCodigoError(validarCodigoUnico(e.target.value));
                   }}
-                  placeholder="Ejemplo: AGP-1001"
+                  placeholder="Ejemplo: AGAPE-001"
                   autoComplete="off"
                   aria-invalid={Boolean(codigoError)}
                   className={`mt-1 w-full rounded-xl border px-3 py-2.5 text-sm outline-none focus:border-brand ${
@@ -282,7 +360,7 @@ export const ResultadosPage: React.FC = () => {
                   <CampoError
                     id="error-codigo-verificacion"
                     mensaje="Revisa el código"
-                    detalle="El formato no es válido. Revisa el código e introdúcelo de nuevo."
+                    detalle="Usa el formato AGAPE-001. También se acepta el código anterior AGP-1001."
                   />
                 )}
               </div>
@@ -323,7 +401,7 @@ export const ResultadosPage: React.FC = () => {
           </section>
 
           {!grupoId ? (
-            <p className="text-sm text-slate-500 mb-4">Selecciona un grupo para ver a sus estudiantes y asociarlos a este ejercicio.</p>
+            <p className="text-sm text-slate-500 mb-4">Selecciona un grupo para asociarlo al ejercicio y ver a sus estudiantes.</p>
           ) : cargandoGrupo ? (
             <Cargando etiqueta="Cargando el grupo" />
           ) : estudiantes.length === 0 ? (
@@ -339,7 +417,9 @@ export const ResultadosPage: React.FC = () => {
               <div className="px-5 py-4 border-b border-slate-100">
                 <h2 className="text-base font-semibold text-brand-dark">Estudiantes del grupo</h2>
                 <p className="text-[12px] text-slate-400">
-                  La verificación queda asociada al ejercicio y al grupo seleccionados. Un pendiente no se marca como ausente.
+                  {estudiantes.filter((item) => verificados.has(item.id)).length} verificados ·{" "}
+                  {estudiantes.filter((item) => !verificados.has(item.id)).length} pendientes. Un pendiente no se marca como
+                  ausente.
                 </p>
               </div>
               <ul className="divide-y divide-slate-100">
@@ -361,7 +441,7 @@ export const ResultadosPage: React.FC = () => {
                           {registrada ? "Verificado" : registrandoId === estudiante.id ? "Registrando…" : "Registrar"}
                         </button>
                       ) : (
-                        <span className="text-[12px] text-slate-400">Sin permiso para registrar</span>
+                        <span className="text-[12px] text-slate-400">{registrada ? "Verificado" : "Pendiente"}</span>
                       )}
                     </li>
                   );

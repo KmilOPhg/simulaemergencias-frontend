@@ -47,7 +47,9 @@ export const Home: React.FC = () => {
           </Link>
         )}
 
-        {(tienePermiso(PERMISOS.VERIFICACIONES_REGISTRAR) || tienePermiso(PERMISOS.EJERCICIOS_CONSULTAR)) && (
+        {(tienePermiso(PERMISOS.VERIFICACIONES_REGISTRAR) ||
+          tienePermiso(PERMISOS.VERIFICACIONES_CONSULTAR) ||
+          tienePermiso(PERMISOS.EJERCICIOS_CONSULTAR)) && (
           <Link
             to="/resultados"
             className="flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:border-brand hover:shadow-md transition"

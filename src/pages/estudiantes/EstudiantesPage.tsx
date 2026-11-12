@@ -10,6 +10,7 @@ import { PaginacionSimple } from "../../components/PaginacionSimple";
 import { EstudiantesService } from "../../services/estudiantes.service";
 import { GruposService } from "../../services/grupos.service";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
+import { validarCodigoUnico } from "../../utils/codigo.utils";
 import { nombreEstudiante } from "../../utils/estudiante.utils";
 import type { Estudiante } from "../../types/estudiante.types";
 import type { Grupo } from "../../types/grupo.types";
@@ -65,16 +66,9 @@ export const EstudiantesPage: React.FC = () => {
     void iniciar();
   }, [cargarListado]);
 
-  const validarCodigo = (valor: string): string => {
-    const limpio = valor.trim();
-    if (!limpio) return "Completa este campo";
-    if (!/^[A-Za-z0-9-]+$/.test(limpio)) return "Revisa el código";
-    return "";
-  };
-
   const buscarPorCodigo = async (event: React.FormEvent) => {
     event.preventDefault();
-    const error = validarCodigo(codigo);
+    const error = validarCodigoUnico(codigo);
     setCodigoError(error);
     if (error) {
       if (error === "Revisa el código") {
@@ -156,12 +150,12 @@ export const EstudiantesPage: React.FC = () => {
                 value={codigo}
                 onChange={(e) => {
                   setCodigo(e.target.value);
-                  if (codigoError) setCodigoError(validarCodigo(e.target.value));
+                  if (codigoError) setCodigoError(validarCodigoUnico(e.target.value));
                 }}
                 onBlur={() => {
-                  if (codigo.trim()) setCodigoError(validarCodigo(codigo));
+                  if (codigo.trim()) setCodigoError(validarCodigoUnico(codigo));
                 }}
-                placeholder="Ejemplo: AGP-1001"
+                placeholder="Ejemplo: AGAPE-001"
                 autoComplete="off"
                 aria-invalid={Boolean(codigoError)}
                 aria-describedby={codigoError ? "error-codigo" : undefined}
@@ -189,7 +183,7 @@ export const EstudiantesPage: React.FC = () => {
               <CampoError
                 id="error-codigo"
                 mensaje="Revisa el código"
-                detalle="El formato no es válido. Revisa el código e introdúcelo de nuevo."
+                detalle="Usa el formato AGAPE-001. También se acepta el código anterior AGP-1001."
               />
             )}
           </form>
